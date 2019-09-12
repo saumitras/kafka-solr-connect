@@ -1,0 +1,7 @@
+{ "id":"1", "body":"hi, this message 1", "counter":10 },
+{ "id":"2", "body":"hi, this message 2", "counter":103 },
+{ "id":"3", "body":"hi, this message 3", "counter":110 },
+{ "id":"4", "body":"hi, this message 4", "counter":1210 }
+
+curl http://localhost:8983/solr/col1/update -H "Content-type: text/xml" --data-binary '<delete><query>*:*</query></delete>'
+curl http://localhost:8983/solr/col1/update -H "Content-type: text/xml" --data-binary '<commit />'
