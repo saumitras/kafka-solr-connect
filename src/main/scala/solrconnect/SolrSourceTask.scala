@@ -1,12 +1,11 @@
 package solrconnect
 
-import org.apache.kafka.connect.source.{SourceRecord, SourceTask}
+import org.apache.kafka.connect.source.SourceTask
 import org.apache.kafka.connect.source.SourceRecord
 import java.io.IOException
 import java.util
-
 import org.apache.solr.client.solrj.impl.CloudSolrClient
-
+import solrconnect.Constants.Props._
 import scala.collection.JavaConverters._
 
 class SolrSourceTask extends SourceTask with Logging {
@@ -25,13 +24,12 @@ class SolrSourceTask extends SourceTask with Logging {
   override def version(): String = new SolrSourceConnector().version()
 
   override def start(props: util.Map[String, String]): Unit = {
-    topicPrefix = props.get("topicPrefix")
-    zkHost = props.get("zkHost")
-    zkChroot = props.get("zkChroot")
-    collectionName = props.get("collectionName")
-    batchSize = props.get("batchSize").toInt
-    query = props.get("query")
-
+    topicPrefix = props.get(TOPIC_PREFIX)
+    zkHost = props.get(ZK_HOST)
+    zkChroot = props.get(ZK_CHROOT)
+    collectionName = props.get(COLLECTION_NAME)
+    batchSize = props.get(BATCH_SIZE).toInt
+    query = props.get(QUERY)
 
     cursorMark = getCurrentCursorMark(collectionName)
     client = SolrClient.getClient(zkHost, zkChroot)

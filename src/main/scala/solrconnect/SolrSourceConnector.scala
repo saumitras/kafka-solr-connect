@@ -1,7 +1,8 @@
 package solrconnect
 
 import java.util
-
+import solrconnect.Constants.Props._
+import solrconnect.Constants.Documentation._
 import org.apache.kafka.common.config.ConfigDef.{Importance, Type}
 import org.apache.kafka.common.config.{AbstractConfig, ConfigDef, ConfigException}
 import org.apache.kafka.connect.connector.Task
@@ -19,12 +20,12 @@ class SolrSourceConnector extends SourceConnector with Logging {
 
   private val CONFIG_DEF:ConfigDef = {
     new ConfigDef()
-      .define("topicPrefix", Type.STRING, Importance.HIGH, "Prefix to add to collection name to get topic name")
-      .define("zkHost", Type.STRING, Importance.HIGH, "Zookeeper host comma separated")
-      .define("zkChroot", Type.STRING, Importance.HIGH, "Chroot if available")
-      .define("collectionName", Type.STRING, Importance.HIGH, "Name of collection to index")
-      .define("batchSize", Type.STRING, Importance.LOW, "Number of docs to read in each batch")
-      .define("query", Type.STRING, Importance.HIGH, "Solr query filter while fetching docs")
+      .define(TOPIC_PREFIX, Type.STRING, Importance.HIGH, PREFIX_TO_ADD_TO_COLLECTION_NAME_TO_GET_TOPIC_NAME)
+      .define(ZK_HOST, Type.STRING, Importance.HIGH, ZOOKEEPER_HOST_COMMA_SEPARATED)
+      .define(ZK_CHROOT, Type.STRING, Importance.HIGH, CHROOT_IF_AVAILABLE)
+      .define(COLLECTION_NAME, Type.STRING, Importance.HIGH, NAME_OF_COLLECTION_TO_INDEX)
+      .define(BATCH_SIZE, Type.STRING, Importance.LOW, NUMBER_OF_DOCS_TO_READ_IN_EACH_BATCH)
+      .define(QUERY, Type.STRING, Importance.HIGH, SOLR_QUERY_FILTER_WHILE_FETCHING_DOCS)
   }
 
   override def version(): String = {
@@ -40,12 +41,12 @@ class SolrSourceConnector extends SourceConnector with Logging {
 
   override def start(props: util.Map[String, String]): Unit = {
     val parsedConfig: AbstractConfig = new AbstractConfig(CONFIG_DEF, props)
-    topicPrefix = parsedConfig.getString("topicPrefix")
-    zkHost = parsedConfig.getString("zkHost")
-    zkChroot = parsedConfig.getString("zkChroot")
-    collectionName = parsedConfig.getString("collectionName")
-    batchSize = parsedConfig.getString("batchSize")
-    query = parsedConfig.getString("query")
+    topicPrefix = parsedConfig.getString(TOPIC_PREFIX)
+    zkHost = parsedConfig.getString(ZK_HOST)
+    zkChroot = parsedConfig.getString(ZK_CHROOT)
+    collectionName = parsedConfig.getString(COLLECTION_NAME)
+    batchSize = parsedConfig.getString(BATCH_SIZE)
+    query = parsedConfig.getString(QUERY)
   }
 
   override def stop(): Unit = {
@@ -59,12 +60,12 @@ class SolrSourceConnector extends SourceConnector with Logging {
     val configs = new java.util.ArrayList[java.util.Map[String, String]]()
 
     val config = new java.util.HashMap[String, String]()
-    config.put("topicPrefix", topicPrefix)
-    config.put("zkHost", zkHost)
-    config.put("zkChroot", zkChroot)
-    config.put("collectionName", collectionName)
-    config.put("batchSize", batchSize)
-    config.put("query", query)
+    config.put(TOPIC_PREFIX, topicPrefix)
+    config.put(ZK_HOST, zkHost)
+    config.put(ZK_CHROOT, zkChroot)
+    config.put(COLLECTION_NAME, collectionName)
+    config.put(BATCH_SIZE, batchSize)
+    config.put(QUERY, query)
     configs.add(config)
 
     configs
