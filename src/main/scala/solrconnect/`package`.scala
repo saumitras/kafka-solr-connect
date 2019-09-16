@@ -22,6 +22,21 @@ object `package` {
       val SOLR_QUERY_FILTER_WHILE_FETCHING_DOCS = "Solr query filter while fetching docs"
     }
 
+    object SolrFieldAttribute {
+      val NAME = "name"
+      val TYPE = "type"
+      val MULTIVALUED = "multiValued"
+      val INDEXED = "indexed"
+      val STORED = "stored"
+      val REQUIRED = "required"
+    }
+
+    object SolrDataType {
+      val STRING = "STRING"
+      val PINT = "PINT"
+      val PLONG = "PLONG"
+    }
+
   }
 
 }
