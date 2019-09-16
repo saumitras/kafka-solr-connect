@@ -57,7 +57,7 @@ class SolrSourceConnector extends SourceConnector with Logging {
 
   override def stop(): Unit = {
     log.info("Stopping connector. Closing all client connections")
-    SolrClient.clients.values.foreach(_.close)
+    SolrClient.closeClients()
   }
 
   override def version(): String = {

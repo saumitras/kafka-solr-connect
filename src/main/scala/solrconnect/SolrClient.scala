@@ -13,14 +13,20 @@ import org.apache.solr.common.params.CursorMarkParams
 
 object SolrClient extends Logging {
 
-  val clients = TrieMap[String, CloudSolrClient]()
+  private val clients = TrieMap[String, CloudSolrClient]()
 
-  def getClient(zkHost:String, chroot:String):CloudSolrClient = {
+  def closeClients(): Unit = {
+    clients.values.foreach(_.close)
+  }
+
+  def getClient(zkHost: String, chroot: String): CloudSolrClient = {
     val key = zkHost + chroot
     log.info(s"Requesting new client for zkHost:$key from cache")
 
     clients.get(key) match {
-      case Some(client) => client
+      case Some(client) =>
+        client
+
       case None =>
         log.info(s"No existing client found for zkHost=$key in cache. Creating a new client.")
         val client = new CloudSolrClient.Builder(zkHost.split(",").toList.asJava, java.util.Optional.ofNullable(chroot))
@@ -29,23 +35,23 @@ object SolrClient extends Logging {
           .build()
 
         clients.put(key, client)
-        getClient(zkHost, chroot)
+
+        client
     }
   }
 
-  def querySolr(client:CloudSolrClient, query:String, numRows:Int, cursorMark:String): (String, List[SolrDocument]) = {
+  def querySolr(client: CloudSolrClient, query: String, numRows: Int, cursorMark: String): (String, List[SolrDocument]) = {
     val q = new SolrQuery(query).setRows(numRows).setSort(SortClause.asc("id"))
     q.set(CursorMarkParams.CURSOR_MARK_PARAM, cursorMark)
+
     log.info("Solr Query: " + q.toString)
 
-    val rsp = client.query(q)
+    val queryResponse = client.query(q)
 
-    val nextCursorMark = rsp.getNextCursorMark
-    val docs = rsp.getResults.asScala.toList
+    val nextCursorMark = queryResponse.getNextCursorMark
+    val docs = queryResponse.getResults.asScala.toList
 
     (nextCursorMark, docs)
   }
 
 }
-
-

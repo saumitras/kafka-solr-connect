@@ -41,7 +41,7 @@ class SolrSourceTask extends SourceTask with Logging {
 
   def stop(): Unit = {
     log.info("Closing open client connections")
-    SolrClient.clients.values.foreach(_.close)
+    SolrClient.closeClients()
   }
 
   override def poll(): util.List[SourceRecord] = {
