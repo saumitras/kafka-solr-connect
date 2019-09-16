@@ -3,36 +3,30 @@ package solrconnect
 import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
 import org.apache.solr.client.solrj.request.schema.SchemaRequest
 import org.apache.solr.common.SolrDocument
-
+import solrconnect.Constants.SolrFieldAttribute._
+import solrconnect.Constants.SolrDataType._
 import scala.collection.JavaConverters._
 import scala.util.Try
 
-case class SolrFieldInfo(name:String, datatype:String, isMultivalued:Boolean, isIndexed:Boolean, isStored:Boolean)
+case class SolrFieldInfo(name: String, datatype: String, isMultivalued: Boolean, isIndexed: Boolean, isStored: Boolean)
 
-object SchemaManager {
+class SchemaManager(zkHost: String, zkChroot: String, collectionName: String) {
+  lazy val SOLR_SCHEMA: Schema = convertSolrSchemaToKafkaSchema(getSchema(zkHost, zkChroot, collectionName))
 
-  var SOLR_SCHEMA:Schema = _
-
-  def initSchema(zkHost:String, zkChroot:String, collectionName:String) = {
-    SOLR_SCHEMA = solrToKafkaSchema(getSchema(zkHost, zkChroot, collectionName))
-  }
-
-  def getSchema(zkHost:String, chroot:String, collection:String):List[SolrFieldInfo] = {
-    val client = SolrClient.getClient(zkHost, chroot)
-    client.setDefaultCollection(collection)
+  private def getSchema(zkHost: String, chroot: String, collection: String): List[SolrFieldInfo] = {
+    val solrClient = SolrClient(zkHost, chroot, collection)
 
     val req = new SchemaRequest.Fields()
-    val resp = req.process(client)
+    val res = req.process(solrClient.client)
 
-    val fields = resp.getFields.asScala
+    val fields = res.getFields.asScala
 
     val parsedFields = fields.map { f =>
-      val name = f.get("name").toString
-      val datatype = f.get("type").toString
-      val isMultivalued = Try(f.get("multiValued").toString.toBoolean).getOrElse(false)
-      val isIndexed = Try(f.get("indexed").toString.toBoolean).getOrElse(false)
-      val isStored = Try(f.get("stored").toString.toBoolean).getOrElse(false)
-      val isRequired = Try(f.get("required").toString.toBoolean).getOrElse(false)
+      val name = f.get(NAME).toString
+      val datatype = f.get(TYPE).toString
+      val isMultivalued = Try(f.get(MULTIVALUED).toString.toBoolean).getOrElse(false)
+      val isIndexed = Try(f.get(INDEXED).toString.toBoolean).getOrElse(false)
+      val isStored = Try(f.get(STORED).toString.toBoolean).getOrElse(false)
 
       SolrFieldInfo(name, datatype, isMultivalued, isIndexed, isStored)
     }
@@ -41,13 +35,14 @@ object SchemaManager {
   }
 
 
-  def solrToKafkaSchema(fields:List[SolrFieldInfo]) = {
+  private def convertSolrSchemaToKafkaSchema(fields: List[SolrFieldInfo]): Schema = {
     val schema = SchemaBuilder.struct().name("data").version(1)
+
     fields.foreach { f =>
       val datatype = f.datatype.toUpperCase match {
-        case "STRING" => Schema.STRING_SCHEMA
-        case "PINT" => Schema.INT32_SCHEMA
-        case "PLONG" => Schema.INT64_SCHEMA
+        case STRING => Schema.STRING_SCHEMA
+        case PINT => Schema.INT32_SCHEMA
+        case PLONG => Schema.INT64_SCHEMA
         case _ => Schema.STRING_SCHEMA
       }
 
@@ -56,19 +51,15 @@ object SchemaManager {
     schema.build()
   }
 
-
-
-
-  def solrDocToKafkaMsg(doc:SolrDocument) = {
-
-    val fields = SOLR_SCHEMA.fields().asScala.toList
+  def convertSolrDocToKafkaMsg(doc: SolrDocument): Struct = {
 
     val struct = new Struct(SOLR_SCHEMA)
+    val fields = SOLR_SCHEMA.fields().asScala.toList
 
     fields.map { f =>
       val fieldName = f.name
 
-      if(doc.getFieldValue(fieldName) != null) {
+      if (doc.getFieldValue(fieldName) != null) {
         f.schema match {
           case Schema.STRING_SCHEMA =>
             struct.put(fieldName, doc.getFieldValue(fieldName).toString)
@@ -83,7 +74,10 @@ object SchemaManager {
     }
 
     struct
-
   }
+}
 
+object SchemaManager {
+  def apply(zkHost: String, zkChroot: String, collectionName: String): SchemaManager =
+    new SchemaManager(zkHost, zkChroot, collectionName)
 }

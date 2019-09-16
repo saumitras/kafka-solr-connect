@@ -1,9 +1,7 @@
 package solrconnect
 
-import org.slf4j.LoggerFactory
-import org.apache.solr.common.params.SolrParams
+import org.slf4j.{Logger, LoggerFactory}
 
 trait Logging {
-  val log = LoggerFactory.getLogger(this.getClass)
+  val log: Logger = LoggerFactory.getLogger(this.getClass)
 }
-
