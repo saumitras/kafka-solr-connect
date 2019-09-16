@@ -10,21 +10,16 @@ import scala.util.Try
 
 case class SolrFieldInfo(name: String, datatype: String, isMultivalued: Boolean, isIndexed: Boolean, isStored: Boolean)
 
-object SchemaManager {
+class SchemaManager(zkHost: String, zkChroot: String, collectionName: String) {
+  lazy val SOLR_SCHEMA: Schema = convertSolrSchemaToKafkaSchema(getSchema(zkHost, zkChroot, collectionName))
 
-  var SOLR_SCHEMA: Schema = _
-
-  def initSchema(zkHost: String, zkChroot: String, collectionName: String): Unit = {
-    SOLR_SCHEMA = solrToKafkaSchema(getSchema(zkHost, zkChroot, collectionName))
-  }
-
-  def getSchema(zkHost: String, chroot: String, collection: String): List[SolrFieldInfo] = {
+  private def getSchema(zkHost: String, chroot: String, collection: String): List[SolrFieldInfo] = {
     val solrClient = SolrClient(zkHost, chroot, collection)
 
     val req = new SchemaRequest.Fields()
-    val resp = req.process(solrClient.client)
+    val res = req.process(solrClient.client)
 
-    val fields = resp.getFields.asScala
+    val fields = res.getFields.asScala
 
     val parsedFields = fields.map { f =>
       val name = f.get(NAME).toString
@@ -40,8 +35,9 @@ object SchemaManager {
   }
 
 
-  def solrToKafkaSchema(fields: List[SolrFieldInfo]): Schema = {
+  private def convertSolrSchemaToKafkaSchema(fields: List[SolrFieldInfo]): Schema = {
     val schema = SchemaBuilder.struct().name("data").version(1)
+
     fields.foreach { f =>
       val datatype = f.datatype.toUpperCase match {
         case STRING => Schema.STRING_SCHEMA
@@ -55,12 +51,10 @@ object SchemaManager {
     schema.build()
   }
 
-
-  def solrDocToKafkaMsg(doc: SolrDocument): Struct = {
-
-    val fields = SOLR_SCHEMA.fields().asScala.toList
+  def convertSolrDocToKafkaMsg(doc: SolrDocument): Struct = {
 
     val struct = new Struct(SOLR_SCHEMA)
+    val fields = SOLR_SCHEMA.fields().asScala.toList
 
     fields.map { f =>
       val fieldName = f.name
@@ -80,7 +74,10 @@ object SchemaManager {
     }
 
     struct
-
   }
+}
 
+object SchemaManager {
+  def apply(zkHost: String, zkChroot: String, collectionName: String): SchemaManager =
+    new SchemaManager(zkHost, zkChroot, collectionName)
 }

@@ -18,6 +18,7 @@ class SolrSourceTask extends SourceTask with Logging {
 
   var pollDuration = 5000
   var client: SolrClient = _
+  var schemaManager: SchemaManager = _
   var cursorMark = "*"
 
   override def version(): String = new SolrSourceConnector().version()
@@ -33,7 +34,7 @@ class SolrSourceTask extends SourceTask with Logging {
     cursorMark = getCurrentCursorMark(collectionName)
     client = SolrClient(zkHost, zkChroot, collectionName)
 
-    SchemaManager.initSchema(zkHost, zkChroot, collectionName)
+    schemaManager = SchemaManager(zkHost, zkChroot, collectionName)
   }
 
   def stop(): Unit = {
@@ -52,11 +53,11 @@ class SolrSourceTask extends SourceTask with Logging {
         Thread.sleep(pollDuration)
       } else {
         solrDocs.foreach { doc =>
-          val msg = SchemaManager.solrDocToKafkaMsg(doc)
+          val msg = schemaManager.convertSolrDocToKafkaMsg(doc)
           val sourcePartition = getPartition(collectionName)
           val sourceOffset = getOffset(nextCursorMark)
           val topic = topicPrefix + collectionName
-          val schema = SchemaManager.SOLR_SCHEMA
+          val schema = schemaManager.SOLR_SCHEMA
 
           val record = new SourceRecord(
             sourcePartition,
