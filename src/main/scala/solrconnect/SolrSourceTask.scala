@@ -8,17 +8,17 @@ import org.apache.solr.client.solrj.impl.CloudSolrClient
 import solrconnect.Constants.Props._
 import scala.collection.JavaConverters._
 
-class SolrSourceTask extends SourceTask with Logging {
+class SolrSourceTask extends SourceTask with ConnectorLogger {
 
-  var topicPrefix:String = ""
+  var topicPrefix: String = ""
   var query = "*:*"
-  var collectionName:String = _
-  var zkHost:String = _
-  var zkChroot:String = _
-  var batchSize:Int = 10
+  var collectionName: String = _
+  var zkHost: String = _
+  var zkChroot: String = _
+  var batchSize: Int = 10
 
   var pollDuration = 5000
-  var client:CloudSolrClient = _
+  var client: CloudSolrClient = _
   var cursorMark = "*"
 
   override def version(): String = new SolrSourceConnector().version()
@@ -48,7 +48,7 @@ class SolrSourceTask extends SourceTask with Logging {
 
       val (nextCursorMark, solrDocs) = SolrClient.querySolr(client, query, batchSize, cursorMark)
 
-      if(cursorMark == nextCursorMark) {
+      if (cursorMark == nextCursorMark) {
         log.info("No update in cursor-mark. Sleeping for " + pollDuration)
         Thread.sleep(pollDuration)
       } else {
@@ -80,19 +80,19 @@ class SolrSourceTask extends SourceTask with Logging {
     }
   }
 
-  private def getCurrentCursorMark(collectionName:String):String = {
+  private def getCurrentCursorMark(collectionName: String): String = {
     val offset = context.offsetStorageReader().offset(getPartition(collectionName))
 
-    if(offset == null) cursorMark else {
+    if (offset == null) cursorMark else {
       offset.get("cursorMark").asInstanceOf[String]
     }
   }
 
-  private def getPartition(collectionName:String): util.Map[String, String] = {
+  private def getPartition(collectionName: String): util.Map[String, String] = {
     Map("collectionName" -> collectionName).asJava
   }
 
-  private def getOffset(cursorMark:String): util.Map[String, String] = {
+  private def getOffset(cursorMark: String): util.Map[String, String] = {
     Map("cursorMark" -> cursorMark).asJava
   }
 

@@ -11,7 +11,7 @@ import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.SolrQuery.SortClause
 import org.apache.solr.common.params.CursorMarkParams
 
-object SolrClient extends Logging {
+object SolrClient extends ConnectorLogger {
 
   private val clients = TrieMap[String, CloudSolrClient]()
 

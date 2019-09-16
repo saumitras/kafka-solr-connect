@@ -7,17 +7,17 @@ import org.apache.solr.common.SolrDocument
 import scala.collection.JavaConverters._
 import scala.util.Try
 
-case class SolrFieldInfo(name:String, datatype:String, isMultivalued:Boolean, isIndexed:Boolean, isStored:Boolean)
+case class SolrFieldInfo(name: String, datatype: String, isMultivalued: Boolean, isIndexed: Boolean, isStored: Boolean)
 
 object SchemaManager {
 
-  var SOLR_SCHEMA:Schema = _
+  var SOLR_SCHEMA: Schema = _
 
-  def initSchema(zkHost:String, zkChroot:String, collectionName:String) = {
+  def initSchema(zkHost: String, zkChroot: String, collectionName: String): Unit = {
     SOLR_SCHEMA = solrToKafkaSchema(getSchema(zkHost, zkChroot, collectionName))
   }
 
-  def getSchema(zkHost:String, chroot:String, collection:String):List[SolrFieldInfo] = {
+  def getSchema(zkHost: String, chroot: String, collection: String): List[SolrFieldInfo] = {
     val client = SolrClient.getClient(zkHost, chroot)
     client.setDefaultCollection(collection)
 
@@ -41,7 +41,7 @@ object SchemaManager {
   }
 
 
-  def solrToKafkaSchema(fields:List[SolrFieldInfo]) = {
+  def solrToKafkaSchema(fields: List[SolrFieldInfo]): Schema = {
     val schema = SchemaBuilder.struct().name("data").version(1)
     fields.foreach { f =>
       val datatype = f.datatype.toUpperCase match {
@@ -57,9 +57,7 @@ object SchemaManager {
   }
 
 
-
-
-  def solrDocToKafkaMsg(doc:SolrDocument) = {
+  def solrDocToKafkaMsg(doc: SolrDocument): Struct = {
 
     val fields = SOLR_SCHEMA.fields().asScala.toList
 
@@ -68,7 +66,7 @@ object SchemaManager {
     fields.map { f =>
       val fieldName = f.name
 
-      if(doc.getFieldValue(fieldName) != null) {
+      if (doc.getFieldValue(fieldName) != null) {
         f.schema match {
           case Schema.STRING_SCHEMA =>
             struct.put(fieldName, doc.getFieldValue(fieldName).toString)

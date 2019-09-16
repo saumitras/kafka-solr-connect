@@ -4,21 +4,21 @@ import java.util
 import solrconnect.Constants.Props._
 import solrconnect.Constants.Documentation._
 import org.apache.kafka.common.config.ConfigDef.{Importance, Type}
-import org.apache.kafka.common.config.{AbstractConfig, ConfigDef, ConfigException}
+import org.apache.kafka.common.config.{AbstractConfig, ConfigDef}
 import org.apache.kafka.connect.connector.Task
 import org.apache.kafka.connect.source.SourceConnector
 import com.sun.xml.internal.ws.util.VersionUtil
 
-class SolrSourceConnector extends SourceConnector with Logging {
+class SolrSourceConnector extends SourceConnector with ConnectorLogger {
 
-  private var topicPrefix:String = _
-  private var zkHost:String = _
-  private var zkChroot:String = _
-  private var collectionName:String = _
-  private var batchSize:String = _
-  private var query:String = _
+  private var topicPrefix: String = _
+  private var zkHost: String = _
+  private var zkChroot: String = _
+  private var collectionName: String = _
+  private var batchSize: String = _
+  private var query: String = _
 
-  private val CONFIG_DEF:ConfigDef = {
+  private val CONFIG_DEF: ConfigDef = {
     new ConfigDef()
       .define(TOPIC_PREFIX, Type.STRING, Importance.HIGH, PREFIX_TO_ADD_TO_COLLECTION_NAME_TO_GET_TOPIC_NAME)
       .define(ZK_HOST, Type.STRING, Importance.HIGH, ZOOKEEPER_HOST_COMMA_SEPARATED)
