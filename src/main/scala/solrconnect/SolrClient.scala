@@ -9,7 +9,7 @@ import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.SolrQuery.SortClause
 import org.apache.solr.common.params.CursorMarkParams
 
-class SolrClient(zkHost: String, chroot: String, collectionName: String) extends ConnectorLogger {
+class SolrClient(zkHost: String, chroot: String, collectionName: String) extends Logging {
 
   val client: CloudSolrClient = new CloudSolrClient.Builder(zkHost.split(",").toList.asJava, java.util.Optional.ofNullable(chroot))
     .withConnectionTimeout(30000)
@@ -37,7 +37,7 @@ class SolrClient(zkHost: String, chroot: String, collectionName: String) extends
   }
 }
 
-object SolrClient extends ConnectorLogger {
+object SolrClient extends Logging {
 
   private val solrClientCache = new ConcurrentHashMap[String, SolrClient]()
 

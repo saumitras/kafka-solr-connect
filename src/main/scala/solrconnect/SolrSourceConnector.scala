@@ -9,7 +9,7 @@ import org.apache.kafka.connect.connector.Task
 import org.apache.kafka.connect.source.SourceConnector
 import com.sun.xml.internal.ws.util.VersionUtil
 
-class SolrSourceConnector extends SourceConnector with ConnectorLogger {
+class SolrSourceConnector extends SourceConnector with Logging {
 
   private var topicPrefix: String = _
   private var zkHost: String = _

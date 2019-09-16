@@ -7,7 +7,7 @@ import java.util
 import solrconnect.Constants.Props._
 import scala.collection.JavaConverters._
 
-class SolrSourceTask extends SourceTask with ConnectorLogger {
+class SolrSourceTask extends SourceTask with Logging {
 
   var topicPrefix: String = ""
   var query = "*:*"
