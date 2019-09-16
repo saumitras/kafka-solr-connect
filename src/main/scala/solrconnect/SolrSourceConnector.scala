@@ -17,7 +17,7 @@ class SolrSourceConnector extends SourceConnector with Logging {
   private var batchSize:String = _
   private var query:String = _
 
-  val CONFIG_DEF:ConfigDef = {
+  private val CONFIG_DEF:ConfigDef = {
     new ConfigDef()
       .define("topicPrefix", Type.STRING, Importance.HIGH, "Prefix to add to collection name to get topic name")
       .define("zkHost", Type.STRING, Importance.HIGH, "Zookeeper host comma separated")
@@ -27,6 +27,17 @@ class SolrSourceConnector extends SourceConnector with Logging {
       .define("query", Type.STRING, Importance.HIGH, "Solr query filter while fetching docs")
   }
 
+  override def version(): String = {
+    try {
+      classOf[VersionUtil].getPackage.getImplementationVersion
+    } catch {
+      case ex: Exception =>
+        "0.0.1"
+    }
+  }
+
+  override def config(): ConfigDef = CONFIG_DEF
+
   override def start(props: util.Map[String, String]): Unit = {
     val parsedConfig: AbstractConfig = new AbstractConfig(CONFIG_DEF, props)
     topicPrefix = parsedConfig.getString("topicPrefix")
@@ -35,7 +46,11 @@ class SolrSourceConnector extends SourceConnector with Logging {
     collectionName = parsedConfig.getString("collectionName")
     batchSize = parsedConfig.getString("batchSize")
     query = parsedConfig.getString("query")
+  }
 
+  override def stop(): Unit = {
+    log.info("Stopping connector. Closing all client connections")
+    SolrClient.closeClients()
   }
 
   override def taskClass(): Class[_ <: Task] = classOf[SolrSourceTask]
@@ -54,21 +69,5 @@ class SolrSourceConnector extends SourceConnector with Logging {
 
     configs
   }
-
-  override def stop(): Unit = {
-    log.info("Stopping connector. Closing all client connections")
-    SolrClient.closeClients()
-  }
-
-  override def version(): String = {
-    try {
-      classOf[VersionUtil].getPackage.getImplementationVersion
-    } catch {
-      case ex: Exception =>
-        "0.0.1"
-    }
-  }
-
-  override def config(): ConfigDef = CONFIG_DEF
 
 }
