@@ -8,11 +8,8 @@ import java.util
 import org.apache.solr.client.solrj.impl.CloudSolrClient
 
 import scala.collection.JavaConverters._
-import org.slf4j.LoggerFactory
 
-class SolrSourceTask extends SourceTask {
-
-  private val log = LoggerFactory.getLogger(classOf[SolrSourceTask])
+class SolrSourceTask extends SourceTask with Logging {
 
   var topicPrefix:String = ""
   var query = "*:*"
@@ -20,15 +17,12 @@ class SolrSourceTask extends SourceTask {
   var zkHost:String = _
   var zkChroot:String = _
   var batchSize:Int = 10
-  var pollDuration = 5000
 
+  var pollDuration = 5000
   var client:CloudSolrClient = _
   var cursorMark = "*"
 
-  def stop(): Unit = {
-    log.info("Closing open client connections")
-    SolrClient.clients.values.foreach(_.close)
-  }
+  override def version(): String = new SolrSourceConnector().version()
 
   override def start(props: util.Map[String, String]): Unit = {
     topicPrefix = props.get("topicPrefix")
@@ -43,6 +37,11 @@ class SolrSourceTask extends SourceTask {
     client = SolrClient.getClient(zkHost, zkChroot)
     client.setDefaultCollection(collectionName)
     SchemaManager.initSchema(zkHost, zkChroot, collectionName)
+  }
+
+  def stop(): Unit = {
+    log.info("Closing open client connections")
+    SolrClient.clients.values.foreach(_.close)
   }
 
   override def poll(): util.List[SourceRecord] = {
@@ -83,9 +82,7 @@ class SolrSourceTask extends SourceTask {
     }
   }
 
-  override def version(): String = new SolrSourceConnector().version()
-
-  def getCurrentCursorMark(collectionName:String):String = {
+  private def getCurrentCursorMark(collectionName:String):String = {
     val offset = context.offsetStorageReader().offset(getPartition(collectionName))
 
     if(offset == null) cursorMark else {
@@ -93,13 +90,12 @@ class SolrSourceTask extends SourceTask {
     }
   }
 
-  def getPartition(collectionName:String) = {
+  private def getPartition(collectionName:String): util.Map[String, String] = {
     Map("collectionName" -> collectionName).asJava
   }
 
-  def getOffset(cursorMark:String) = {
+  private def getOffset(cursorMark:String): util.Map[String, String] = {
     Map("cursorMark" -> cursorMark).asJava
   }
-
 
 }
