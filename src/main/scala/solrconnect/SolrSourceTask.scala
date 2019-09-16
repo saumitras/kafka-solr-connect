@@ -4,7 +4,6 @@ import org.apache.kafka.connect.source.SourceTask
 import org.apache.kafka.connect.source.SourceRecord
 import java.io.IOException
 import java.util
-import org.apache.solr.client.solrj.impl.CloudSolrClient
 import solrconnect.Constants.Props._
 import scala.collection.JavaConverters._
 
@@ -18,7 +17,7 @@ class SolrSourceTask extends SourceTask with ConnectorLogger {
   var batchSize: Int = 10
 
   var pollDuration = 5000
-  var client: CloudSolrClient = _
+  var client: SolrClient = _
   var cursorMark = "*"
 
   override def version(): String = new SolrSourceConnector().version()
@@ -32,21 +31,21 @@ class SolrSourceTask extends SourceTask with ConnectorLogger {
     query = props.get(QUERY)
 
     cursorMark = getCurrentCursorMark(collectionName)
-    client = SolrClient.getClient(zkHost, zkChroot)
-    client.setDefaultCollection(collectionName)
+    client = SolrClient(zkHost, zkChroot, collectionName)
+
     SchemaManager.initSchema(zkHost, zkChroot, collectionName)
   }
 
   def stop(): Unit = {
-    log.info("Closing open client connections")
-    SolrClient.closeClients()
+    log.info("Closing open client connection")
+    client.close()
   }
 
   override def poll(): util.List[SourceRecord] = {
     try {
       val records = new util.ArrayList[SourceRecord]
 
-      val (nextCursorMark, solrDocs) = SolrClient.querySolr(client, query, batchSize, cursorMark)
+      val (nextCursorMark, solrDocs) = client.querySolr(query, batchSize, cursorMark)
 
       if (cursorMark == nextCursorMark) {
         log.info("No update in cursor-mark. Sleeping for " + pollDuration)

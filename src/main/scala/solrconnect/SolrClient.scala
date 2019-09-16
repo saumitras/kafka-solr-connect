@@ -1,46 +1,24 @@
 package solrconnect
 
+import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.solr.client.solrj.impl.CloudSolrClient
 import org.apache.solr.common.SolrDocument
-
-import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConverters._
-
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.SolrQuery.SortClause
 import org.apache.solr.common.params.CursorMarkParams
 
-object SolrClient extends ConnectorLogger {
+class SolrClient(zkHost: String, chroot: String, collectionName: String) extends ConnectorLogger {
 
-  private val clients = TrieMap[String, CloudSolrClient]()
+  val client: CloudSolrClient = new CloudSolrClient.Builder(zkHost.split(",").toList.asJava, java.util.Optional.ofNullable(chroot))
+    .withConnectionTimeout(30000)
+    .withSocketTimeout(60000)
+    .build()
 
-  def closeClients(): Unit = {
-    clients.values.foreach(_.close)
-  }
+  client.setDefaultCollection(collectionName)
 
-  def getClient(zkHost: String, chroot: String): CloudSolrClient = {
-    val key = zkHost + chroot
-    log.info(s"Requesting new client for zkHost:$key from cache")
-
-    clients.get(key) match {
-      case Some(client) =>
-        client
-
-      case None =>
-        log.info(s"No existing client found for zkHost=$key in cache. Creating a new client.")
-        val client = new CloudSolrClient.Builder(zkHost.split(",").toList.asJava, java.util.Optional.ofNullable(chroot))
-          .withConnectionTimeout(30000)
-          .withSocketTimeout(60000)
-          .build()
-
-        clients.put(key, client)
-
-        client
-    }
-  }
-
-  def querySolr(client: CloudSolrClient, query: String, numRows: Int, cursorMark: String): (String, List[SolrDocument]) = {
+  def querySolr(query: String, numRows: Int, cursorMark: String): (String, List[SolrDocument]) = {
     val q = new SolrQuery(query).setRows(numRows).setSort(SortClause.asc("id"))
     q.set(CursorMarkParams.CURSOR_MARK_PARAM, cursorMark)
 
@@ -52,6 +30,31 @@ object SolrClient extends ConnectorLogger {
     val docs = queryResponse.getResults.asScala.toList
 
     (nextCursorMark, docs)
+  }
+
+  def close(): Unit = {
+    client.close()
+  }
+}
+
+object SolrClient extends ConnectorLogger {
+
+  private val solrClientCache = new ConcurrentHashMap[String, SolrClient]()
+
+  def apply(zkHost: String, chroot: String, collectionName: String): SolrClient = {
+    val key = zkHost + chroot
+    Option(solrClientCache.get(key)) match {
+      case Some(solrClient: SolrClient) => solrClient
+      case None =>
+        val solrClient: SolrClient = new SolrClient(zkHost, chroot, collectionName)
+        solrClientCache.put(key, solrClient)
+        solrClient
+    }
+
+  }
+
+  def close(): Unit = {
+    solrClientCache.values().asScala.foreach(_.close())
   }
 
 }

@@ -51,7 +51,7 @@ class SolrSourceConnector extends SourceConnector with ConnectorLogger {
 
   override def stop(): Unit = {
     log.info("Stopping connector. Closing all client connections")
-    SolrClient.closeClients()
+    SolrClient.close()
   }
 
   override def taskClass(): Class[_ <: Task] = classOf[SolrSourceTask]

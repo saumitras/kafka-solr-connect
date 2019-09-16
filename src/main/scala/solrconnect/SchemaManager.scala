@@ -18,11 +18,10 @@ object SchemaManager {
   }
 
   def getSchema(zkHost: String, chroot: String, collection: String): List[SolrFieldInfo] = {
-    val client = SolrClient.getClient(zkHost, chroot)
-    client.setDefaultCollection(collection)
+    val solrClient = SolrClient(zkHost, chroot, collection)
 
     val req = new SchemaRequest.Fields()
-    val resp = req.process(client)
+    val resp = req.process(solrClient.client)
 
     val fields = resp.getFields.asScala
 
