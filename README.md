@@ -49,8 +49,9 @@ Kafka Source Connector implementation to read data from *Solr* and write to *Kaf
  
  ## Start Connector
  Please be informed that the order in which the properties files `connect-standalone.properties` and `connect-solr-source.properties` are supplied to the `connect-standalone.sh` is important.
- 
-    kafka_2.12-2.3.0/bin/connect-standalone.sh kafka-solr-connect/dist/resources/connect-standalone.properties kafka-solr-connect/dist/resources/connect-solr-source.properties
+ ```
+ kafka_2.12-2.3.0/bin/connect-standalone.sh kafka-solr-connect/dist/resources/connect-standalone.properties kafka-solr-connect/dist/resources/connect-solr-source.properties
+```
 
 ## Verify Data Flow
 - Create a JSON document in Solr `{"id":"doc01"}`.
