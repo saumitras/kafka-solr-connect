@@ -1,6 +1,12 @@
 package solrconnect
 
+import org.slf4j.{Logger, LoggerFactory}
+
 object `package` {
+
+  trait Logging {
+    val log: Logger = LoggerFactory.getLogger(this.getClass)
+  }
 
   object Constants {
 
